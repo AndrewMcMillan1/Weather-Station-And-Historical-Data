@@ -2,10 +2,12 @@
 
 import math
 import time
+import datetime
 import grovepi
 import json
 from time import sleep
 from grovepi import *
+import sqlite3 as sql
 from math import isnan
 
 # Temp/humidity sensor port
@@ -55,26 +57,25 @@ class newNode:
         self.height = 1
 
 
-# The function prints all the keys in the gicven range
-# [k1..k2]. Assumes that k1 < k2
-def range(root, low, k2, range_list):
+# The function finds keys in range [low, high)
+def range(root, low, high, range_list):
     # Base Case
     if root is None:
         return
 
     # move toward low end of range
     if low < root.key:
-        range(root.left, low, k2, range_list)
+        range(root.left, low, high, range_list)
 
     # If data is in range
-    if low <= root.key and k2 > root.key:
+    if low <= root.key and high > root.key:
 
         # add in-range data to list
-        range_list.append(root.data.temp)
+        range_list.append([root.data.temp, root.data.hum])
 
     # move toward high end of range
-    if k2 > root.key:
-        range(root.right, low, k2, range_list)
+    if high > root.key:
+        range(root.right, low, high, range_list)
 
     return range_list
 
@@ -84,15 +85,15 @@ def inorder(root, order_list):
     if root is not None:
 
         # move to left subtree
-        inorder(root.left)
+        inorder(root.left, order_list)
 
         # add data to list
         order_list.append([root.data.temp, root.data.hum])
 
         # move to right subtree
-        inorder(root.right)
+        inorder(root.right, order_list)
 
-        return order_list
+    return order_list
 
 
 # Insert a node function
@@ -205,17 +206,19 @@ def deleteTree(node):
         node.left = None
         node.right = None
 
+
 # find minimum key value
 def minNode(node, min_data):
     current = node
 
     # move only left
-    while current.left != None:
+    while current.left is not None:
         current = current.left
 
     # add min temp node to list
     min_data.append([current.data.temp, current.data.hum])
     return min_data
+
 
 # find maximum key value
 def maxNode(node, max_data):
@@ -231,19 +234,56 @@ def maxNode(node, max_data):
     return max_data
 
 
+# calculates average of list
+def calc_avg(num):
+
+    avg = None
+    sums = 0
+    for t in num:
+        sums = sums + t
+
+        avg = sums / len(num)
+    return avg
+
+
+def list_tuple_avg(the_list, tuple_index):
+
+    avg = None
+
+    if the_list:
+        x = [lis[tuple_index] for lis in the_list]
+        avg = calc_avg(x)
+
+    return avg
+
+
+def find_previous_month(mo):
+
+    monthList = ["December", "January", "February", "March", "April"] #,
+                 #'May', 'June', 'July', 'August', 'September', 'October', 'November')
+
+    num = int(mo)
+    num2 = (num - 1)
+
+    last_month = monthList[num2]
+
+    return last_month
+
+
+
 if __name__ == '__main__':
 
     while True:
 
         # check local time
-        time = time.localtime()
-        strTime = time.strftime("%H:%M:%S", time)
+        curr_time = time.localtime()
+        curr_clock = time.strftime("%H:%M:%S", curr_time)
 
         try:
-            # read sensor data all day, about every 10 minutes
-            if strTime < '19:31:00':
+            # read sensor data all day, every 10 minutes(600), approx. 144/day
+            if curr_clock < '12:44:00':
                 readData()
-                sleep(600)
+                sleep(5)
 
             # last minute of day: begin operations
             else:
@@ -269,11 +309,11 @@ if __name__ == '__main__':
 
                 # read and write data from tree
                 print("Inorder traversal")
-                allList = inorder(root)
+                allList = inorder(root, [])
                 print("below freezing")
-                range1 = range(root, 0, 32.0, [])
+                range1 = range(root, 0, 75.5, [])
                 print("hot")
-                range2 = range(root, 10.01111, 16.019, [])
+                range2 = range(root, 75.5, 80.0, [])
                 print("min")
                 minList = minNode(root, [])
                 print("max")
@@ -299,16 +339,108 @@ if __name__ == '__main__':
                 for i in maxList:
                     print(i)
 
+                # calculate daily stats
+                a = list_tuple_avg(allList, 0)
+                # temp swing (rounded float arithmetic)
+                b = maxList[0][0]
+                c = minList[0][0]
+                d = round(maxList[0][0] - minList[0][0], 1)
+                e = list_tuple_avg(allList, 1)
+                f = list_tuple_avg(range1, 0)
+                g = list_tuple_avg(range2, 1)
+
+                # connect to db and initialize cursor
+                conn = sql.connect('today.db')
+                cur = conn.cursor()
+
+                # create data tables
+                cur.execute("""CREATE TABLE IF NOT EXISTS today ( 
+                          Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                          avgTemp INTEGER,
+                          high INTEGER,
+                          low INTEGER,
+                          tempSwing INTEGER,
+                          avgHum INTEGER,                         
+                          avgFreezeHum INTEGER,
+                          avgHotHum INTEGER                        
+
+                      )""")
+
+                cur.execute("""CREATE TABLE IF NOT EXISTS month (
+                          id INTEGER primary key,
+                          monthName TEXT,           
+                          avgTemp INTEGER,
+                          high INTEGER,
+                          low INTEGER,
+                          tempSwing INTEGER,
+                          avgHum INTEGER,
+                          avgFreezeHum INTEGER,
+                          avgHotHum INTEGER                                                                           
+
+                      )""")
+                conn.commit()
+                # insert tuples and list as records
+                cur.execute("INSERT INTO today (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
+                            " VALUES (?,?,?,?,?,?,?)", (a, b, c, d, e, f, g))  # record
+                conn.commit()
+
+                # string method for datetime queries
+                datestring = str(datetime.datetime.now())
+                # string[ start_index_pos: end_index_pos: step_size]
+                day = datestring[8: 10]
+                month = datestring[5: 7]
+
+                # calc previous month
+                previousMonth = find_previous_month(month)
+                print(previousMonth)
+
+                # create last month's record if first of month
+                if day == '25':
+                    print("month insert branch")
+
+                    cur.execute(("INSERT INTO month (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
+                                 " SELECT avg(avgTemp), avg(high), avg(low), avg(tempSwing), "
+                                 "avg(avgHum), avg(avgFreezeHum), avg(avgHotHum) FROM today"))
+
+                    conn.commit()
+                    lastRecord = (cur.lastrowid)
+                    cur.execute("UPDATE month SET monthName=? WHERE ID=?", (previousMonth, lastRecord))
+                    # cur.execute("UPDATE month SET monthName=? WHERE id = max(id)", (previousMonth))
+
+                    conn.commit()
+
+                cur.execute("SELECT * FROM today")
+                print(cur.fetchall())
+                cur.execute("SELECT * FROM month")
+                print(cur.fetchall())
+                # aggregate query to select and calc avg high and low for month
+                # for i in months
+                # monthstring = months[i]
+                cur.execute(
+                    "SELECT avg(high), avg(low) FROM today WHERE Timestamp LIKE '%" + month + "%'")  # select avg spread/range
+                monthAvg = (cur.fetchall())
+                print(monthAvg)
+                conn.commit()
+
+                # delete temp tables (for testing only)
+                cur.execute("DROP TABLE today")
+                cur.execute("DROP TABLE month")
+                conn.commit
+                conn.close()
+
                 # wait at least until next day begins (local time)
                 sleep(60)
 
+        # handle input/output error
         except IOError:
             print("Error")
 
+        # handle keyboard interrupt exit
         except KeyboardInterrupt as e:
             print(str(e))
 
             break
+
 
 
 
