@@ -1,4 +1,4 @@
-## Andrew McMillan's ePortfolio
+# Andrew McMillan's ePortfolio
 
 ## Professional Self-Assessment
 
@@ -510,6 +510,23 @@ if __name__ == '__main__':
 
 
 ```
+## Narratives
+
+# Architecture and Design
+
+  The artifact is the Raspberry pi and Grove pi weather station that collects temperature and humidity data from a sensor and performs numerous data structure, algorithmic, and database operations to transform temperature and humidity input into more complex historical records containing multiple metrics and statistics. I included this artifact because I imagined the simple “gather and display” design could expand into a much heavier data analysis and presentation. This artifact shows an ability to take raw and limited data through a long process to generate entirely new information. Timers handle the cycles of sensor reading, function calls, and database work. It was a challenge to test the program because the app is intended to continuously run, and the monthly table receives only one record a month. I shortened the timescales dramatically to witness the month table populating with data and the display functions displaying it.   
+  
+# Data Structures and Algorithms
+
+  The Data structure is a self-balancing AVL tree, sorted by temperature in ascending order, consisting of nodes that contain the temperature and humidity data. Multiple functions traverse the tree and return data, such as an in-order traversal, range search, minimum value, and maximum value. The tree was chosen because it is more of a programming challenge and has very interesting set of algorithms that perform operations on the nodes. The enhancements include adding functions that fit the types of data reeds needed to capture interesting data. I adapted to more efficient recursive algorithms from the original artifact. Multiple other non-tree functions perform additional operations like calculations and data manipulation. 
+
+# Database
+
+  The database element is an SQLite3 database that takes data from the various data structure reads and calculations, stores the data in a daily stats table that fills up for a month, and makes use of SQL aggregate functions while moving data from the daily table to the monthly table. The artifact was chosen because SQLite is built into python and the overall design and database aspect could be enhanced by making heavy use of aggregate functions among other more complex queries. I learned that SQL can be complex, and that the process of working with data and doing meaningful analysis with it can be time consuming when hard coding.   
+
+
+# Database
+
 ```python
 # Here is some in python
 def foo():
