@@ -525,38 +525,6 @@ if __name__ == '__main__':
   The database element is an SQLite3 database that takes data from the various data structure reads and calculations, stores the data in a daily stats table that fills up for a month, and makes use of SQL aggregate functions while moving data from the daily table to the monthly table. The artifact was chosen because SQLite is built into python and the overall design and database aspect could be enhanced by making heavy use of aggregate functions among other more complex queries. I learned that SQL can be complex, and that the process of working with data and doing meaningful analysis with it can be time consuming when hard coding.   
 
 
-# Database
-
-```python
-# Here is some in python
-def foo():
-  print 'foo'
-```  
 
 
-You can use the [editor on GitHub](https://github.com/AndrewMcMillan1/AndrewMcMillan1/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
 
