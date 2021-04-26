@@ -389,18 +389,8 @@ def insert_select_month(conn, prev_mo):
     print("Average Humidity When Temp Below Freezing: ", freeze)
     print("Average Humidity When Temp > 85 Degrees: ", hot)
 
-
-def select_month(conn):
-    # insert tuple as record
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM month WHERE monthName")
-    allday = (cur.fetchall())
-    high = allday[0][0]
-    print(high)
-
-
-
-
+    
+# Driver Code
 if __name__ == '__main__':
 
     while True:
