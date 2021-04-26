@@ -245,22 +245,22 @@ def calc_avg(num):
         avg = sums / len(num)
     return avg
 
-
-def list_tuple_avg(the_list, tuple_index):
+# find average of tuple indices in list of tuples
+def list_tuple_avg(list, tuple_index):
 
     avg = None
 
-    if the_list:
-        x = [lis[tuple_index] for lis in the_list]
-        avg = calc_avg(x)
+    if list:
+        t = [lis[tuple_index] for lis in list]
+        avg = calc_avg(t)
 
     return avg
 
-
+# get name of previous month
 def find_previous_month(mo):
 
-    monthList = ["December", "January", "February", "March", "April"] #,
-                 #'May', 'June', 'July', 'August', 'September', 'October', 'November')
+    monthList = ["December", "January", "February", "March", "April",
+                 "May", "June", "July", "August", "September", "October", "November"]
 
     num = int(mo)
     num2 = (num - 1)
@@ -268,6 +268,136 @@ def find_previous_month(mo):
     last_month = monthList[num2]
 
     return last_month
+
+
+# connect to database
+def create_connection():
+
+    conn = None
+
+    try:
+        conn = sql.connect('today.db')
+    except sql.Error as e:
+        print(e)
+
+    return conn
+
+
+# create tables
+def create_tables(conn):
+
+    cur = conn.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS today ( 
+                Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                avgTemp REAL,
+                high REAL,
+                low REAL,
+                tempSwing REAL,
+                avgHum REAL,                         
+                avgFreezeHum REAL,
+                avgHotHum REAL                        
+
+            )""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS month (
+                id INTEGER primary key,
+                monthName TEXT,           
+                avgTemp REAL,
+                high REAL,
+                low REAL,
+                tempSwing REAL,
+                avgHum REAL,
+                avgFreezeHum REAL,
+                avgHotHum REAL                                                                          
+
+            )""")
+    conn.commit()
+
+
+# insert daily record
+def insert_today(conn):
+
+    # insert tuple as record
+    cur = conn.cursor()
+    cur.execute("INSERT INTO today (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
+                " VALUES (?,?,?,?,?,?,?)", (a, b, c, d, e, f, g))  # record
+    conn.commit()
+
+
+def select_today(conn, last_month):
+    # insert tuple as record
+    cur = conn.cursor()
+    cur.execute("SELECT MAX(high), MIN(low), MAX(tempSwing) FROM today")
+    selection = (cur.fetchall())
+    high = selection[0][0]
+    low = selection[0][1]
+    swing = selection[0][2]
+    cur.execute("SELECT COUNT(high) FROM today WHERE avgHum > 80")
+    sel = (cur.fetchall())
+    dd = sel[0][0]
+    cc = str(dd)
+
+    # display data/statistics
+    print("Daily Extremes for the Previous Month (", last_month, ")")
+    print("High Temperature: ", high)
+    print("Low Temperature: ", low)
+    print("High Daily Swing: ", swing)
+    print("Humid Days: ", cc)
+    print()
+
+
+def insert_select_month(conn, prev_mo):
+
+    # insert tuple as record
+    cur = conn.cursor()
+    cur.execute(("INSERT INTO month (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
+                 " SELECT avg(avgTemp), avg(high), avg(low), avg(tempSwing), "
+                 "avg(avgHum), avg(avgFreezeHum), avg(avgHotHum) FROM today"))
+    conn.commit()
+
+    # add month name into record
+    lastRecord = (cur.lastrowid)
+    cur.execute("UPDATE month SET monthName=? WHERE ID=?", (prev_mo, lastRecord))
+    conn.commit()
+
+    # count number of records
+    cur.execute("SELECT COUNT(*) FROM month")
+    sel = (cur.fetchall())
+    dd = sel[0][0]
+    cc = str(dd)
+
+    # select most recend record
+    cur.execute("SELECT * FROM month WHERE id=?", cc)
+    selection = (cur.fetchall())
+
+    # generate output variables
+    avg = selection[0][2]
+    high = selection[0][3]
+    low = selection[0][4]
+    swing = selection[0][5]
+    hum = selection[0][6]
+    freeze = selection[0][7]
+    hot = selection[0][8]
+
+    # display data/statistics
+    print("Monthly Averages For The Previous Month (", prev_mo, ")")
+    print("Average Temperature: ", avg)
+    print("Average High Temperature: ", high)
+    print("Average Low Temperature: ", low)
+    print("Average Swing: ", swing)
+    print("Average Humidity: ", hum)
+    print("Average Humidity When Temp Below Freezing: ", freeze)
+    print("Average Humidity When Temp > 85 Degrees: ", hot)
+
+
+def select_month(conn):
+    # insert tuple as record
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM month WHERE monthName")
+    allday = (cur.fetchall())
+    high = allday[0][0]
+    print(high)
+
 
 
 
@@ -281,7 +411,7 @@ if __name__ == '__main__':
 
         try:
             # read sensor data all day, every 10 minutes(600), approx. 144/day
-            if curr_clock < '12:44:00':
+            if curr_clock < '23:59:00':
                 readData()
                 sleep(5)
 
@@ -307,41 +437,15 @@ if __name__ == '__main__':
                     root = insert(root, yy, read)
                     j = j + 1
 
-                # read and write data from tree
-                print("Inorder traversal")
+                # call tree functions that read, then write to lists
                 allList = inorder(root, [])
-                print("below freezing")
                 range1 = range(root, 0, 75.5, [])
-                print("hot")
                 range2 = range(root, 75.5, 80.0, [])
-                print("min")
                 minList = minNode(root, [])
-                print("max")
                 maxList = maxNode(root, [])
 
-                print("all")
-                for i in allList:
-                    print(i)
-
-                print("freezing")
-                for i in range1:
-                    print(i)
-
-                print("hot")
-                for i in range2:
-                    print(i)
-
-                print("minimum")
-                for i in minList:
-                    print(i)
-
-                print("maximum")
-                for i in maxList:
-                    print(i)
-
-                # calculate daily stats
+                # calculate daily data/stats for database
                 a = list_tuple_avg(allList, 0)
-                # temp swing (rounded float arithmetic)
                 b = maxList[0][0]
                 c = minList[0][0]
                 d = round(maxList[0][0] - minList[0][0], 1)
@@ -350,77 +454,27 @@ if __name__ == '__main__':
                 g = list_tuple_avg(range2, 1)
 
                 # connect to db and initialize cursor
-                conn = sql.connect('today.db')
+                conn = create_connection()
                 cur = conn.cursor()
 
-                # create data tables
-                cur.execute("""CREATE TABLE IF NOT EXISTS today ( 
-                          Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                          avgTemp INTEGER,
-                          high INTEGER,
-                          low INTEGER,
-                          tempSwing INTEGER,
-                          avgHum INTEGER,                         
-                          avgFreezeHum INTEGER,
-                          avgHotHum INTEGER                        
+                # SQL statements
+                create_tables(conn)
+                insert_today(conn)
 
-                      )""")
-
-                cur.execute("""CREATE TABLE IF NOT EXISTS month (
-                          id INTEGER primary key,
-                          monthName TEXT,           
-                          avgTemp INTEGER,
-                          high INTEGER,
-                          low INTEGER,
-                          tempSwing INTEGER,
-                          avgHum INTEGER,
-                          avgFreezeHum INTEGER,
-                          avgHotHum INTEGER                                                                           
-
-                      )""")
-                conn.commit()
-                # insert tuples and list as records
-                cur.execute("INSERT INTO today (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
-                            " VALUES (?,?,?,?,?,?,?)", (a, b, c, d, e, f, g))  # record
-                conn.commit()
-
-                # string method for datetime queries
+                # get index of day and month value in datestring
                 datestring = str(datetime.datetime.now())
                 # string[ start_index_pos: end_index_pos: step_size]
                 day = datestring[8: 10]
                 month = datestring[5: 7]
 
-                # calc previous month
+                # get name of previous month
                 previousMonth = find_previous_month(month)
-                print(previousMonth)
 
                 # create last month's record if first of month
-                if day == '25':
-                    print("month insert branch")
-
-                    cur.execute(("INSERT INTO month (avgTemp, high, low, tempSwing, avgHum, avgFreezeHum, avgHotHum)"
-                                 " SELECT avg(avgTemp), avg(high), avg(low), avg(tempSwing), "
-                                 "avg(avgHum), avg(avgFreezeHum), avg(avgHotHum) FROM today"))
-
-                    conn.commit()
-                    lastRecord = (cur.lastrowid)
-                    cur.execute("UPDATE month SET monthName=? WHERE ID=?", (previousMonth, lastRecord))
-                    # cur.execute("UPDATE month SET monthName=? WHERE id = max(id)", (previousMonth))
-
-                    conn.commit()
-
-                cur.execute("SELECT * FROM today")
-                print(cur.fetchall())
-                cur.execute("SELECT * FROM month")
-                print(cur.fetchall())
-                # aggregate query to select and calc avg high and low for month
-                # for i in months
-                # monthstring = months[i]
-                cur.execute(
-                    "SELECT avg(high), avg(low) FROM today WHERE Timestamp LIKE '%" + month + "%'")  # select avg spread/range
-                monthAvg = (cur.fetchall())
-                print(monthAvg)
-                conn.commit()
+                if day == '01':
+                    # insert month SQL
+                    select_today(conn, previousMonth)
+                    insert_select_month(conn, previousMonth)
 
                 # delete temp tables (for testing only)
                 cur.execute("DROP TABLE today")
@@ -440,7 +494,6 @@ if __name__ == '__main__':
             print(str(e))
 
             break
-
 
 
 
