@@ -471,6 +471,14 @@ if __name__ == '__main__':
                 cur.execute("DROP TABLE month")
                 conn.commit
                 conn.close()
+                
+                # delete lists in preperation for new day of data
+                del sensorData[:]
+                del allList[:]
+                del range1[:]
+                del range2[:]
+                del minList[:]
+                del maxList[:]
 
                 # wait at least until next day begins (local time)
                 sleep(60)
