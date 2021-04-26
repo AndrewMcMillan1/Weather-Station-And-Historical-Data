@@ -11,6 +11,19 @@
   Secure coding is a critical practice. It tends to be less of an issue with Python, and the program takes no input and has no external data file dependencies, but there are potential crash points. The sensor data must be numbers because the tree functions require data type consistency for Boolean comparisons, and that same data goes through mathematical operations in lists that must have consistent numerical data types. Certain operations cannot be performed on empty lists, which do occur frequently when the tree range searches return nothing. Those conditions are checked to prevent crashes. The data can become corrupted if data structures are not emptied after each cycle. The entire tree and all the lists need to be emptied so it doesn’t append to previous day’s data and corrupt the data or cause overflows. Accessing the database also has risks. I made sure the connection was made and handled the exception, otherwise. 
   
   The biggest challenge was the transformation of three separate and unrelated artifacts into one. That meant altering each artifact in a way that would make them compatible. That takes a lot of planning and structured development, and that’s why project management and development frameworks are important. The weather station is designed to run continuously. It requires timing mechanisms that regulate the number of sensor readings, schedule function calls to perform CRUD operations on the data, and schedule record inserts at the end of the day and month. All three components are regulated by timer mechanisms. The data from the sensor is read with the sensor function every few minutes. At the very end of the day, that data is inserted into the tree node structures, sorted by temperature. Multiple functions calls read the tree data and write to data structures. Non-tree functions then extract the data and perform a few calculations to generate statistic value variables that become the column values of one daily record. After daily record insertion, the date is checked. If it is the first of the month, all the records are aggregated, and a new monthly record is generated for the monthly table.    
+  
+## The Weather Station and Historical Data App
+
+```python
+
+
+
+```
+```python
+# Here is some in python
+def foo():
+  print 'foo'
+```  
 
 
 You can use the [editor on GitHub](https://github.com/AndrewMcMillan1/AndrewMcMillan1/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
@@ -21,7 +34,7 @@ Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://j
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
-```markdown
+
 Syntax highlighted code block
 
 # Header 1
