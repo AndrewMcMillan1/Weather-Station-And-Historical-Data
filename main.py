@@ -403,7 +403,7 @@ if __name__ == '__main__':
             # read sensor data all day, every 10 minutes(600), approx. 144/day
             if curr_clock < '23:59:00':
                 readData()
-                sleep(5)
+                sleep(600)
 
             # last minute of day: begin operations
             else:
@@ -465,12 +465,10 @@ if __name__ == '__main__':
                     # insert month SQL
                     select_today(conn, previousMonth)
                     insert_select_month(conn, previousMonth)
+                    cur.execute("DROP TABLE today")
+                    conn.commit()
+                    conn.close()
 
-                # delete temp tables (for testing only)
-                cur.execute("DROP TABLE today")
-                cur.execute("DROP TABLE month")
-                conn.commit
-                conn.close()
                 
                 # delete lists in preperation for new day of data
                 del sensorData[:]
